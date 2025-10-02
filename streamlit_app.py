@@ -110,6 +110,24 @@ if city:
         # Turbine selection
         turbine_selected = st.selectbox("Select Turbine:", list(TURBINES.keys()))
 
+        # ----------------------------
+        # NEW: Turbine Power Curve Chart
+        # ----------------------------
+        st.subheader(f"Turbine Power Curve – {turbine_selected}")
+        t = TURBINES[turbine_selected]
+        ws = np.linspace(0, t["cut_out"]+2, 200)
+        power = np.where(
+            (ws < t["cut_in"]) | (ws > t["cut_out"]),
+            0,
+            np.where(ws <= t["rated_wind"],
+                     t["rated_power"] * (ws/t["rated_wind"])**3,
+                     t["rated_power"])
+        )
+        curve_df = pd.DataFrame({"Wind Speed (m/s)": ws, "Power Output (kW)": power})
+        fig_curve = px.line(curve_df, x="Wind Speed (m/s)", y="Power Output (kW)",
+                            title="Turbine Power Curve", markers=True)
+        st.plotly_chart(fig_curve, use_container_width=True)
+
         # Step 2: Fetch 2020-2024 data
         st.header("📊 Historical Wind Data: 2020–2024")
         df_full = fetch_wind_data(lat, lon, 2020, 2024)
@@ -198,4 +216,3 @@ if city:
                                 title="Predicted Wind Speed for 2025 (Sample)"), use_container_width=True)
 
         st.caption("Note: 2025 prediction uses a simple Random Forest model based on historical wind patterns. For professional studies, advanced models are recommended.")
-
